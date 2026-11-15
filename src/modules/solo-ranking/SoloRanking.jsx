@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { shuffle, sleep, useSingers } from "../../lib/utils.js";
+import { ActionBar, PageHeader, Panel, SingerTile, Stepper } from "../../components/ui.jsx";
 
 export default function SoloRanking() {
   const { singers: all, error } = useSingers();
@@ -27,9 +27,7 @@ export default function SoloRanking() {
     const order = shuffle([...selected]);
     for (let i = 0; i < order.length; i++) {
       const pool = order.slice(i);
-      // slot-machine effect: fast cycling that gradually slows down, then lands
-      const spins = 14;
-      for (let s = 0; s < spins; s++) {
+      for (let s = 0; s < 14; s++) {
         if (cancelled.current) return;
         setTicker(pool[Math.floor(Math.random() * pool.length)]);
         await sleep(50 + s * s * 3);
@@ -43,78 +41,72 @@ export default function SoloRanking() {
     setRunning(false);
   }
 
-  const start = () => {
-    setStep("draw");
-    runDraw();
-  };
-
+  const start = () => { setStep("draw"); runDraw(); };
   const back = () => {
     cancelled.current = true;
     setRunning(false);
     setTicker("");
     setStep("select");
   };
-
   const done = step === "draw" && !running && results.length === selected.size;
 
   return (
-    <section>
-      <Link to="/" className="back">← Home</Link>
-      <h1 className="title">Solo Ranking for Day</h1>
-
-      <div className="steps">
-        <span className={step === "select" ? "step active" : "step"}>1 · Select singers</span>
-        <span className={step === "draw" ? "step active" : "step"}>2 · Draw</span>
-      </div>
-
+    <>
+      <PageHeader icon="🎤" title="Solo Ranking" subtitle="Draw today's solo performance order." />
+      <Stepper steps={["Select singers", "Draw"]} current={step === "select" ? 0 : 1} />
       {error && <p className="error">{error}</p>}
 
       {step === "select" && (
         <>
-          <div className="row">
-            <span className="muted">{selected.size} of {all.length} selected</span>
-            <div className="row gap">
-              <button className="link" onClick={() => setSelected(new Set(all))}>Select all</button>
-              <button className="link" onClick={() => setSelected(new Set())}>Clear</button>
+          <Panel
+            title="Singers"
+            badge={`${selected.size}/${all.length}`}
+            actions={
+              <>
+                <button className="link" onClick={() => setSelected(new Set(all))}>All</button>
+                <button className="link" onClick={() => setSelected(new Set())}>Clear</button>
+              </>
+            }
+          >
+            <div className="tiles">
+              {all.map((n) => (
+                <SingerTile key={n} name={n} state={selected.has(n) ? "on" : ""} onClick={() => toggle(n)} />
+              ))}
             </div>
-          </div>
-          <div className="chips">
-            {all.map((n) => (
-              <button
-                key={n}
-                className={selected.has(n) ? "chip on" : "chip"}
-                onClick={() => toggle(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          <button className="primary" disabled={selected.size < 2} onClick={start}>
-            Start draw
-          </button>
-          {selected.size < 2 && <p className="muted small">Select at least 2 singers.</p>}
+          </Panel>
+          <ActionBar info={selected.size < 2 ? "Select at least 2 singers" : `${selected.size} singers ready`}>
+            <button className="primary" disabled={selected.size < 2} onClick={start}>Start draw</button>
+          </ActionBar>
         </>
       )}
 
       {step === "draw" && (
         <>
-          <div className={ticker ? "ticker spin" : "ticker"}>
-            {ticker || (running ? "…" : done ? "All set 🎉" : "")}
+          <div className={ticker ? "stage spin" : "stage"}>
+            <span className="stage-label">{running ? "Drawing…" : "Result"}</span>
+            <div className="stage-text">{ticker || (running ? "…" : done ? "All set 🎉" : "")}</div>
           </div>
-          <ol className="results">
-            {results.map((n, i) => (
-              <li key={n} style={{ animationDelay: "0ms" }}>
-                <span className="rank">{i + 1}</span>
-                <span>{n}</span>
-              </li>
-            ))}
-          </ol>
-          <div className="row gap">
-            <button className="secondary" onClick={back}>← Change singers</button>
+          <Panel title="Order" badge={`${results.length}/${selected.size}`}>
+            {results.length === 0 ? (
+              <p className="muted small">Waiting for the first pick…</p>
+            ) : (
+              <ol className="results">
+                {results.map((n, i) => (
+                  <li key={n} className={i === 0 ? "first" : ""}>
+                    <span className="rank">{i + 1}</span>
+                    <span className="avatar sm">{n[0]}</span>
+                    <span className="r-name">{n}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Panel>
+          <ActionBar info={done ? "Draw complete" : "Drawing…"}>
+            <button className="secondary" onClick={back}>Change singers</button>
             {done && <button className="primary" onClick={runDraw}>Draw again</button>}
-          </div>
+          </ActionBar>
         </>
       )}
-    </section>
+    </>
   );
 }
