@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api } from "./api.js";
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -15,8 +16,7 @@ export function useSingers() {
   const [singers, setSingers] = useState([]);
   const [error, setError] = useState("");
   useEffect(() => {
-    fetch("/api/singers")
-      .then((r) => r.json())
+    api("/api/singers")
       .then((d) => setSingers(d.singers))
       .catch(() => setError("Could not load singers."));
   }, []);

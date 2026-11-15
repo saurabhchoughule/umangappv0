@@ -8,12 +8,15 @@ A simple, modern web app that makes our Karaoke Group's sessions more fun and or
 
 ## Tech stack
 - React + Vite (front-end)
-- Vercel serverless function for the singer list (`api/`)
+- Vercel-style serverless functions in `api/` (auth, users, singers)
+- libSQL/SQLite database (local file in dev, Turso free tier in production)
+- Argon2id password hashing, signed httpOnly session cookies
 - Hosting target: Vercel free tier
 
 ## Getting started
 ```
 npm install
+cp .env.example .env   # then fill in AUTH_SECRET and ADMIN_SETUP_KEY (see file)
 npm run dev      # http://localhost:5173
 npm run build    # production build into dist/
 ```
@@ -33,6 +36,10 @@ src/
     registry.js           List of all modules
     solo-ranking/         Module: Solo Ranking for Day
     duet-sequence/        Module: Duet Song Selection
+    user-management/      Module: User Management (admin only)
+  auth/AuthContext.jsx    Session state for the whole app
+  pages/                  Login, Setup (first admin), SetPassword
+api/_lib/                 DB access + auth helpers (not exposed as endpoints)
 ```
 
 ## Modules
@@ -45,6 +52,16 @@ src/
 1. **Select pairs**: tap two singers to form a pair. A singer can be in more than one pair; duplicate pairs are not allowed (at least 2 pairs).
 2. **Review**: all pairs are shown together on one screen.
 3. **Draw**: an animated reveal builds the duet singing sequence. "Draw again" re-shuffles.
+
+### User Management (`/users`, admin only)
+Admins add users (name, username, role). The app generates a **one-time setup link** (valid 48 hours) that the admin shares privately. The new user opens it and chooses their own password, so admins never see passwords. Admins can also issue a new link (password reset), change roles, and disable or enable users.
+
+## Login and access
+- The app opens on a login page. Everything else, including `/api/singers`, needs a signed-in user.
+- Roles: **admin** (everything, plus User Management) and **user** (regular modules).
+- **First run:** open the app and choose "Create the admin account". You need `ADMIN_SETUP_KEY` from `.env`. This only works while there are no users.
+- Passwords: min 10 characters, stored as Argon2id hashes. Accounts lock for 15 minutes after 5 failed logins.
+- Hide a module from non-admins with `adminOnly: true` in the registry.
 
 ## Adding a new module
 1. Create a folder `src/modules/<module-name>/` with a React component (e.g. `MyModule.jsx`).
@@ -69,4 +86,7 @@ Use `useSingers()`, `shuffle()` and `sleep()` from `src/lib/utils.js` for common
 Singers are served by the backend at `/api/singers`, from the fixed list in `api/_singers.js`. Locally, Vite serves the same data. In future this can become its own module backed by a database.
 
 ## Deploying to Vercel
-Import the GitHub repo at vercel.com. The Vite framework is auto-detected, and `vercel.json` handles page routing.
+1. Create a free Turso database (`turso db create umang`, then `turso db show umang --url` and `turso db tokens create umang`).
+2. Import the GitHub repo at vercel.com. The Vite framework is auto-detected, and `vercel.json` handles page routing.
+3. Add environment variables in Vercel: `AUTH_SECRET`, `ADMIN_SETUP_KEY`, `DATABASE_URL`, `DATABASE_AUTH_TOKEN`.
+4. Deploy, open the site, and create the admin account.
