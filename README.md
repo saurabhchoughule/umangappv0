@@ -1,9 +1,10 @@
 # umangappv0
-This Repo is created for version 1 app build for our Karaoke Group
+A simple, modern web app that makes our Karaoke Group's sessions more fun and organised. This is version 1.
 
-Features
-- Frontend to Karaoke Activities
-- Episode wise songs data
+## Features
+- A home page that brings all karaoke activities together as modules
+- Fair, animated draws for solo and duet performance order
+- Episode-wise songs data (coming soon)
 
 ## Tech stack
 - React + Vite (front-end)
