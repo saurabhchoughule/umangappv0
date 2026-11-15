@@ -44,3 +44,11 @@ button { font: inherit; }
 .results li { display: flex; align-items: center; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; font-weight: 500; animation: slideIn .4s ease-out both; }
 .rank { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; font-size: 13px; font-weight: 700; }
 @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+.sub { margin: 0; font-size: 16px; }
+.chip.paired { border-color: var(--accent); color: var(--accent); }
+.pair-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.pair-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-soft); color: var(--accent); padding: 6px 8px 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 500; }
+.pair-tag button { background: none; border: 0; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; }
+.pairs-grid { margin-top: 8px; }
+.pair-card { display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; animation: slideIn .4s ease-out both; }
+.pair-card em { color: var(--accent); font-style: normal; }

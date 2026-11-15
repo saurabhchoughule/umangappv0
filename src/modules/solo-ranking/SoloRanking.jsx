@@ -1,34 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+import { shuffle, sleep, useSingers } from "../../lib/utils.js";
 
 export default function SoloRanking() {
-  const [all, setAll] = useState([]);
+  const { singers: all, error } = useSingers();
   const [selected, setSelected] = useState(new Set());
   const [step, setStep] = useState("select"); // select | draw
   const [results, setResults] = useState([]);
   const [ticker, setTicker] = useState("");
   const [running, setRunning] = useState(false);
-  const [error, setError] = useState("");
   const cancelled = useRef(false);
 
-  useEffect(() => {
-    fetch("/api/singers")
-      .then((r) => r.json())
-      .then((d) => setAll(d.singers))
-      .catch(() => setError("Could not load singers."));
-    return () => { cancelled.current = true; };
-  }, []);
+  useEffect(() => () => { cancelled.current = true; }, []);
 
   const toggle = (name) =>
     setSelected((s) => {
