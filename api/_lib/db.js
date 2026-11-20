@@ -14,26 +14,80 @@ function getClient() {
   return client;
 }
 
+const SCHEMA = [
+  `CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('admin','user')),
+    password_hash TEXT,
+    active INTEGER NOT NULL DEFAULT 1,
+    invite_hash TEXT,
+    invite_expires INTEGER,
+    token_version INTEGER NOT NULL DEFAULT 0,
+    failed_attempts INTEGER NOT NULL DEFAULT 0,
+    locked_until INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS songs (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    original_singer TEXT,
+    language TEXT,
+    album TEXT,
+    year TEXT,
+    lyrics_url TEXT,
+    created_by TEXT,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS episodes (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    date TEXT NOT NULL,
+    venue TEXT NOT NULL,
+    theme TEXT,
+    remarks TEXT,
+    status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','live','completed')),
+    created_by TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  `CREATE TABLE IF NOT EXISTS performances (
+    id TEXT PRIMARY KEY,
+    episode_id TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('solo','duet')),
+    singers TEXT NOT NULL,
+    position INTEGER,
+    song_id TEXT,
+    performed INTEGER NOT NULL DEFAULT 0,
+    closed INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS idx_perf_episode ON performances(episode_id)`,
+  // One rating per user per performance, enforced by the primary key.
+  `CREATE TABLE IF NOT EXISTS ratings (
+    performance_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    score INTEGER NOT NULL CHECK (score BETWEEN 0 AND 5),
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (performance_id, user_id)
+  )`,
+];
+
 async function db() {
   const c = getClient();
-  ready ??= c.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      username TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      role TEXT NOT NULL CHECK (role IN ('admin','user')),
-      password_hash TEXT,
-      active INTEGER NOT NULL DEFAULT 1,
-      invite_hash TEXT,
-      invite_expires INTEGER,
-      token_version INTEGER NOT NULL DEFAULT 0,
-      failed_attempts INTEGER NOT NULL DEFAULT 0,
-      locked_until INTEGER NOT NULL DEFAULT 0,
-      created_at INTEGER NOT NULL
-    )`);
+  ready ??= c.batch(SCHEMA, "write");
   await ready;
   return c;
 }
+
+// Generic helpers for modules beyond users.
+export async function query(sql, args = []) {
+  const r = await (await db()).execute({ sql, args });
+  return r.rows.map((row) => Object.fromEntries(r.columns.map((col, i) => [col, row[i]])));
+}
+export const exec = async (sql, args = []) => (await db()).execute({ sql, args });
+export const tx = async (statements) => (await db()).batch(statements, "write");
 
 const toUser = (r) =>
   r && {

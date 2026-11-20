@@ -46,7 +46,7 @@ export default function App() {
                 {modules.map((m) => (
                   <Route
                     key={m.id}
-                    path={m.path}
+                    path={m.routePath || m.path}
                     element={m.adminOnly && user.role !== "admin" ? <Navigate to="/" replace /> : <m.component />}
                   />
                 ))}

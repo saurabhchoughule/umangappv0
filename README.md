@@ -34,15 +34,31 @@ src/
   lib/utils.js            Shared helpers: shuffle, sleep, useSingers()
   modules/
     registry.js           List of all modules
+    episodes/             Module: Karaoke Episodes (full session workflow)
     solo-ranking/         Module: Solo Ranking for Day
     duet-sequence/        Module: Duet Song Selection
     user-management/      Module: User Management (admin only)
   auth/AuthContext.jsx    Session state for the whole app
   pages/                  Login, Setup (first admin), SetPassword
+api/episodes.js, songs.js, ratings.js   Episode workflow, song catalogue, ratings
 api/_lib/                 DB access + auth helpers (not exposed as endpoints)
 ```
 
 ## Modules
+
+### Karaoke Episodes (`/episodes`)
+One module for a whole session, stored in the database for future reference.
+1. **Details** (admin): date (weekday is automatic), venue, optional title/theme/remarks. Title defaults to "Episode N".
+2. **Solo**: pick singers from the list or add a guest on the spot, then draw. The server picks and saves the order; the screen animates it.
+3. **Duet**: build pairs (or choose "No duets"), then draw the same way.
+4. **Go live**: optionally pick songs, then start the session. The lineup and draw are locked from here.
+5. **Session** (everyone): admin marks each performance as performed and picks its song from a searchable list (new songs can be added on the spot: name, original singer, language, movie/album, year, lyrics link).
+6. **Ratings**: any signed-in user rates a performed song from 0 to 5, **once** (final). The final average and distribution appear when every active user has rated, or when the admin closes voting, or when the episode is finished. Individual scores are never shown.
+7. **Finish episode** (admin): closes voting. Afterwards only admins can edit the episode details.
+
+Normal users see live and completed episodes only; drafts are admin-only. Live pages refresh every 8 seconds.
+
+Lyrics are stored as a link, not text, to avoid copying copyrighted lyrics.
 
 ### Solo Ranking for Day (`/solo-ranking`)
 1. **Select singers** from the singer list (at least 2).
